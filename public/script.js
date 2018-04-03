@@ -1,4 +1,3 @@
-var socket = io();
 let seekTo = false;
 var player;
 
@@ -10,6 +9,7 @@ function addSong() {
 }
 
 socket.on('play-song', function (vidId) {
+  console.log(vidId)
   player.loadVideoById(vidId);
 });
 
@@ -18,7 +18,6 @@ socket.on('pause-vid', function () {
 });
 
 socket.on('play-vid', function (time) {
-  console.log(time)
   seekTo = true;
   player.playVideo();
   player.seekTo(time);

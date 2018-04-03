@@ -1,4 +1,4 @@
-.container { 
+.rainbow { 
     height: 100%;
     width: 100%;
     left:0;
@@ -45,4 +45,10 @@
     border: 1px solid #ccc;
     background-color: #f3f3f3;
     position:fixed;
+}
+
+#roomJoinedDiv {
+    position: fixed;
+    right: 10px;
+    top: 0;
 }
