@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Listen It</title>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+	<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+
+	<div class="container">
+		<!-- <div>
+			<h2>Join een room</h2>
+			Room:
+			<input type="text">
+		</div> -->
+
+		<input id="url" type="text" placeholder="Youtube url" />
+		<button onclick="addSong()">Voeg toe</button>
+		<button onclick="nextSong()">Volgende</button>
+		<ul id="queue">
+		</ul>
+		<h2 id="vidTitle"></h2>
+		<h2 id="vidAuthor"></h2>
+		<div id="player"></div>
+	</div>
+
+</body>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script src="./auth.js"></script>
+<!-- for the youtube player -->
+<script src="http://www.youtube.com/player_api"></script>
+
+<script src="./script.js"></script>
+
+<!-- youtube search -->
+<script src="./search.js"></script>
+<script src="https://apis.google.com/js/client.js?onload=googleApiClientReady"></script>
+
+</html>
