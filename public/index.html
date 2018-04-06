@@ -1,57 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="theme-color" content="#000000">
 
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta http-equiv="X-UA-Compatible" content="ie=edge">
-	<title>Listen It</title>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
-	<link rel="stylesheet" href="style.css">
-
-</head>
-
-<body>
-	<div id="roomMenu" class="rainbow">
-		<h2>Join een room</h2>
-		Room:
-		<input id="room" type="text">
-		<button onclick="joinRoom()">Join</button>
-		<ul id="rooms"></ul>
-		
-	</div>
-
-	<div id="videoContainer" style="display: none;" class="rainbow">
-		<div id="roomJoinedDiv">
-			<p id="roomJoined">Join een room!</p>
-			<button>Leave</button>
-		</div>
-
-		<input id="url" type="text" placeholder="Youtube url" />
-		<button onclick="addSong()">Voeg toe</button>
-		<button onclick="nextSong()">Volgende</button>
-		<ul id="queue"></ul>
-		<h2 id="vidTitle"></h2>
-		<h2 id="vidAuthor"></h2>
-		<div id="player"></div>
-	</div>
-
-</body>
-
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-<script src="./auth.js"></script>
-<!-- for the youtube player -->
-<script src="http://www.youtube.com/player_api"></script>
-
-<script>
-	var socket = io();	
-</script>
-
-<script src="./script.js"></script>
-<script src="./rooms.js"></script>
-
-<!-- youtube search -->
-<script src="./search.js"></script>
-<script src="https://apis.google.com/js/client.js?onload=googleApiClientReady"></script>
-
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json">
+    <link rel="shortcut icon" href="http://www.stephanybatista.com/wp-content/uploads/2016/03/together.jpg">
+    <link href="https://fonts.googleapis.com/css?family=Baloo" rel="stylesheet">
+    
+    <script defer src="https://use.fontawesome.com/releases/v5.0.9/js/all.js" integrity="sha384-8iPTk2s/jMVj81dnzb/iFR2sdA7u06vHJyyLlAd4snFpCl/SnyUjRrbdJsw1pGIl" crossorigin="anonymous"></script>
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> -->
+    <title>Watch It Together</title>
+  </head>
+  <body>
+    <noscript>
+      You need to enable JavaScript to run this app.
+    </noscript>
+    <div id="root"></div>
+  </body>
 </html>

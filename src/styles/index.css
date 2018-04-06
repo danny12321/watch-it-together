@@ -1,0 +1,44 @@
+@import "rainbow.css";
+@import "player.css";
+
+* {
+  font-family: 'Baloo', cursive;
+}
+
+.container {
+  height: 100%;
+  width: 100%;
+  left:0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  position: absolute;
+}
+
+.bottom {
+  border-top: 2px solid black;
+  position: absolute;
+  display: block;
+  bottom: 0;
+  width: 100%;
+}
+
+.wrapper {
+  display: flex;
+}
+
+.alert {
+  position: fixed;
+  z-index: 1;
+  bottom: 30px;
+  left: 50%;
+  width: 50%;
+  margin-left: -25%;
+  font-size: 25px;
+  color: white;
+  text-align: center;
+  padding: 15px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  cursor: pointer;
+}

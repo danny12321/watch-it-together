@@ -4,26 +4,36 @@ const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const port = 5500;
 
-var queue = {};
-var rooms = [];
+let queue = {};
+let rooms = [];
 
 // app.use(express.static('public'));
-app.use(express.static('./public/'));
+app.use(express.static('./public'));
 
 http.listen(port, function () {
   console.log('listening on *:' + port);
 });
 
 io.on('connection', function (socket) {
+  // TODO remove listener from rooms
+  socket.on('disconnect', () => {
+    console.log(socket.rooms)
+  })
 
-  // New User
+
   socket.on('join-room', room => {
-    if (rooms.indexOf(room) < 0) {
-      rooms.push(room);
+    if (!rooms.find(o => o.name === room)) {
+      // if room doesnt exist add the room      
+      rooms.push({ name: room, listeners: 1 });
       queue[room] = [];
+    } else {
+      // if room exist add a listener
+      let index = rooms.findIndex(o => o.name === room);
+      rooms[index].listeners += 1;
     }
     socket.join(room);
     socket.emit('room-joined', room)
+    io.sockets.emit('sendRooms', rooms)
   });
 
   socket.on('getRooms', () => {
@@ -31,9 +41,8 @@ io.on('connection', function (socket) {
   });
 
   // PLAYER THINGY
-  socket.on('add-to-queue', function (url, callback) {
-    var vidId = url.substr(url.length - 11);
-    queue[getRoom(socket)].push(vidId);
+  socket.on('add-to-queue', function (video_id, callback) {
+    queue[getRoom(socket)].push(video_id);
     updateQueue();
   });
 
@@ -43,30 +52,42 @@ io.on('connection', function (socket) {
   });
 
   socket.on('play', time => {
-    io.to(getRoom(socket)).emit('play-vid', time);
+    console.log('time', time)
+    let playTime = new Date().getTime() + 4000;
+    
+    io.to(getRoom(socket)).emit('play-vid', {vidTime: time, playTime});
 
     // io.sockets.emit('play-vid', time);
   })
 
   socket.on('next-song', () => {
-    if (queue[getRoom(socket)]&& queue[getRoom(socket)][1]) queue[getRoom(socket)].shift();
-    io.to(getRoom(socket)).emit('play-song', queue[getRoom(socket)][0]);
+    let activeRoom = getRoom(socket);
+    if (!activeRoom) {
+      socket.emit('room-doesnt-exist');
+      return;
+    }
+    let time = new Date().getTime() + 4000;
+
+    if (queue[getRoom(socket)] && queue[getRoom(socket)][1]) queue[getRoom(socket)].shift();
+    io.to(getRoom(socket)).emit('play-song', { time, vidId: queue[getRoom(socket)][0] });
     // io.sockets.emit('play-song', queue[0]);
     updateQueue();
   });
 
 
   function getRoom(socket) {
-    var index = 0;
+    let index = 0;
     let activeRoom;
 
-    for (var room in socket.rooms) {
+    for (let room in socket.rooms) {
       if (index === 1) {
         activeRoom = room;
         return activeRoom;
       }
       index++;
     }
+
+    return false;
   }
 
   function updateQueue() {
