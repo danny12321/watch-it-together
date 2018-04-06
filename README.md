@@ -1,13 +1,17 @@
-- Watch It Together
+# Watch It Together
 
 Looking together is more fun? 
 
 With this website you can!
 
-- To start
+# To start
 > npm i
+
 > npm start
-Open another terminal
+
+- Open another terminal
+
 > cd api
 > npm i
+
 > npm start
