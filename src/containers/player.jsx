@@ -10,6 +10,7 @@ class Player extends Component {
     this.state = {
       player: null,
       vidInfo: {},
+      currentRoom: null,
       wait: false,
       seekTo: false,
       alert: null,
@@ -21,27 +22,24 @@ class Player extends Component {
     let { socket } = this.props;
 
     socket.on('play-song', data => {
+      if (!data.vid) {
+        this.setState({ alert: { message: 'Voeg eerst een video toe aan de wachtrij!', color: 'orange' } });
+        return;
+      }
+
       // stop the video at the event handeler and wait for others
-      this.setState({ wait: true });
-
-      this.state.player.loadVideoById(data.vidId);
-
-      youTube.getById(data.vidId, (err, result) => {
-        if (err) { console.log(err); return }
-        if (!result.items[0]) return;
-        this.setState({ vidInfo: result.items[0].snippet });
-        document.title = result.items[0].snippet.title + ' - Watch It Together';
-      });
+      this.setState({ wait: true, vidInfo: data.vid });
+      this.state.player.loadVideoById(data.vid.video_id);
 
       setTimeout(() => {
         this.setState({ wait: true });
         this.state.player.playVideo();
         this.setState({ wait: false });
-      }, data.time - new Date().getTime())
+      }, 4000)
+      // }, data.time - new Date().getTime())
     });
 
     socket.on('update-queue', queue => {
-      // TODO 
       this.setState({ queue })
     });
 
@@ -53,6 +51,10 @@ class Player extends Component {
       this.setState({ seekTo: true });
       this.state.player.seekTo(data.vidTime);
       this.state.player.playVideo();
+    });
+
+    socket.on('updateStatus', (data) => {
+      this.setState({currentRoom: data})
     });
   }
 
@@ -107,25 +109,9 @@ class Player extends Component {
     });
   }
 
-  addSong(e) {
-    let video_id;
-
-    if (e.target) {
-      e.preventDefault();
-
-      video_id = e.target.url.value.split('v=')[1];
-      let ampersandPosition = video_id.indexOf('&');
-      if (ampersandPosition !== -1) {
-        video_id = video_id.substring(0, ampersandPosition);
-      }
-      e.target.url.value = '';
-    } else {
-      video_id = e;
-    }
-
+  addSong(video, type) {
     this.setState({ alert: { message: 'De video is toegevoegd!', color: 'green' } });
-    setTimeout(() => { this.setState({ alert: null }) }, 3000);
-    this.props.socket.emit('add-to-queue', video_id);
+    this.props.socket.emit('add-to-queue', { video_id: video.id.videoId, name: video.snippet.title, type });
   }
 
   nextSong() {
@@ -133,11 +119,17 @@ class Player extends Component {
   }
 
   render() {
+    if (this.state.alert) {
+      setTimeout(() => { this.setState({ alert: null }) }, 3000);
+    }
+
     return (
       <div id="videoContainer" className="container wrapper">
         <div className="sidbar">
-          <h2 id="vidTitle">{this.state.vidInfo.title || 'Selecteer een video!'}</h2>
-
+          <div id="vidTitle">
+            <h2>{this.state.vidInfo.name || 'Selecteer een video!'}</h2>
+            <span className="userCount"><i className="fas fa-users"></i> {this.state.currentRoom ? this.state.currentRoom.listeners : '...'}</span>
+          </div>
           <div className="sidebar-menu">
             <div onClick={() => this.setState({ activeMenu: 'queue' })}>
               <i className="fas fa-bars"></i> Wachtlijst
@@ -149,12 +141,7 @@ class Player extends Component {
 
           {this.renderMenu()}
 
-
           <div className="bottom">
-            {/* <form onSubmit={this.addSong.bind(this)}>
-              <input id="url" className="vidInput" type="text" placeholder="Youtube url" />
-              <button className="addVideoButton" type="submit">Voeg toe</button>
-            </form> */}
             <button className="nextSong rainbow" onClick={this.nextSong.bind(this)}><span>Volgende </span></button>
           </div>
         </div>
@@ -175,9 +162,9 @@ class Player extends Component {
     if (activeMenu === 'queue') {
       return (
         <div>
-          {this.state.queue ? this.state.queue.map(title => {
-            return <p>- {title}</p>
-          }) : <p>Voeg een video toe..</p>}
+          {this.state.queue.length ? this.state.queue.map((vid, key) => {
+            return <p key={key}>- {vid.name}</p>
+          }) : <p style={{ textAlign: 'center' }}>Voeg een video toe..</p>}
         </div>
       )
     } else if (activeMenu === 'search') {
@@ -191,7 +178,7 @@ class Player extends Component {
           <div className="searchCards">
             {this.state.searchResult.map(el => {
               return (
-                <div onClick={this.addSong.bind(this, el.id.videoId)} key={el.id.videoId} className="card">
+                <div onClick={this.addSong.bind(this, el, 'youtube')} key={el.id.videoId} className="card">
                   <img className="imgCard" src={el.snippet.thumbnails.medium.url} alt={el.snippet.title} />
                   {el.snippet.title}
                 </div>

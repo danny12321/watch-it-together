@@ -4,6 +4,7 @@ const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const port = 5500;
 
+
 let queue = {};
 let rooms = [];
 
@@ -15,11 +16,17 @@ http.listen(port, function () {
 });
 
 io.on('connection', function (socket) {
-  // TODO remove listener from rooms
-  socket.on('disconnect', () => {
-    console.log(socket.rooms)
-  })
+  socket.on('disconnecting', function(){
+    socket.leave(getRoom(socket));
+    
+    let index = rooms.findIndex(o => o.name === getRoom(socket));
+    if (!rooms[index]) return;
+    rooms[index].listeners -= 1;
 
+    if (rooms[index].listeners === 0) rooms.splice(index, 1)
+    io.sockets.emit('sendRooms', rooms)
+    io.to(getRoom(socket)).emit('updateStatus', rooms[index]);    
+  });
 
   socket.on('join-room', room => {
     if (!rooms.find(o => o.name === room)) {
@@ -32,8 +39,16 @@ io.on('connection', function (socket) {
       rooms[index].listeners += 1;
     }
     socket.join(room);
+
+    // To the socket
     socket.emit('room-joined', room)
+
+    // To home screen
     io.sockets.emit('sendRooms', rooms)
+
+    // To who are already in the room
+    let index = rooms.findIndex(o => o.name === room);
+    io.to(room).emit('updateStatus', rooms[index]);
   });
 
   socket.on('getRooms', () => {
@@ -41,8 +56,8 @@ io.on('connection', function (socket) {
   });
 
   // PLAYER THINGY
-  socket.on('add-to-queue', function (video_id, callback) {
-    queue[getRoom(socket)].push(video_id);
+  socket.on('add-to-queue', function (video, callback) {
+    queue[getRoom(socket)].push({ video_id: video.video_id, name: video.name });
     updateQueue();
   });
 
@@ -52,13 +67,10 @@ io.on('connection', function (socket) {
   });
 
   socket.on('play', time => {
-    console.log('time', time)
     let playTime = new Date().getTime() + 4000;
-    
-    io.to(getRoom(socket)).emit('play-vid', {vidTime: time, playTime});
 
-    // io.sockets.emit('play-vid', time);
-  })
+    io.to(getRoom(socket)).emit('play-vid', { vidTime: time, playTime });
+  });
 
   socket.on('next-song', () => {
     let activeRoom = getRoom(socket);
@@ -69,8 +81,7 @@ io.on('connection', function (socket) {
     let time = new Date().getTime() + 4000;
 
     if (queue[getRoom(socket)] && queue[getRoom(socket)][1]) queue[getRoom(socket)].shift();
-    io.to(getRoom(socket)).emit('play-song', { time, vidId: queue[getRoom(socket)][0] });
-    // io.sockets.emit('play-song', queue[0]);
+    io.to(getRoom(socket)).emit('play-song', { time, vid: queue[getRoom(socket)][0] });
     updateQueue();
   });
 
@@ -92,6 +103,5 @@ io.on('connection', function (socket) {
 
   function updateQueue() {
     io.to(getRoom(socket)).emit('update-queue', queue[getRoom(socket)]);
-    // io.sockets.emit('update-queue', queue);
   }
 });

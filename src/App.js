@@ -45,7 +45,6 @@ class App extends Component {
   }
 
   render() {
-    console.log()
     if (this.state.room) return this.renderRoom()
     else return this.renderHome()
   }
