@@ -6,9 +6,11 @@ const port = 5500;
 
 
 let queue = {};
-let rooms = [];
+// {`roomName`: [{video_id: .., name: .., type: youtube || directUrl }, ]}
 
-// app.use(express.static('public'));
+let rooms = [];
+// [{name: as, listeners}]
+
 app.use(express.static('./public'));
 
 http.listen(port, function () {
@@ -20,12 +22,14 @@ io.on('connection', function (socket) {
     socket.leave(getRoom(socket));
     
     let index = rooms.findIndex(o => o.name === getRoom(socket));
+    console.log(queue)
+    
     if (!rooms[index]) return;
     rooms[index].listeners -= 1;
 
     if (rooms[index].listeners === 0) rooms.splice(index, 1)
     io.sockets.emit('sendRooms', rooms)
-    io.to(getRoom(socket)).emit('updateStatus', rooms[index]);    
+    io.to(getRoom(socket)).emit('updateStatus', rooms[index]);
   });
 
   socket.on('join-room', room => {
@@ -57,7 +61,7 @@ io.on('connection', function (socket) {
 
   // PLAYER THINGY
   socket.on('add-to-queue', function (video, callback) {
-    queue[getRoom(socket)].push({ video_id: video.video_id, name: video.name });
+    queue[getRoom(socket)].push({ video_id: video.video_id, name: video.name, type: video.type });
     updateQueue();
   });
 

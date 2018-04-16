@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
-import YouTubePlayer from 'youtube-player';
+import Ytplayer from './players/youtube';
+import DirectUrl from './players/directUrl';
+
 var YouTube = require('youtube-node');
 var youTube = new YouTube();
 youTube.setKey('AIzaSyBuFVdMqJlnX16uraP1kcovX0AbJzke2wM');
@@ -9,8 +11,11 @@ class Player extends Component {
     super(props);
     this.state = {
       player: null,
+      socket: this.props.socket,
       vidInfo: {},
       currentRoom: null,
+      currentAt: null,
+      paused: false,
       wait: false,
       seekTo: false,
       alert: null,
@@ -28,13 +33,11 @@ class Player extends Component {
       }
 
       // stop the video at the event handeler and wait for others
-      this.setState({ wait: true, vidInfo: data.vid });
-      this.state.player.loadVideoById(data.vid.video_id);
+      this.setState({ wait: true, vidInfo: data.vid, paused: true });
 
       setTimeout(() => {
-        this.setState({ wait: true });
-        this.state.player.playVideo();
-        this.setState({ wait: false });
+        //   this.setState({ wait: true });
+        this.setState({ wait: false, paused: false });
       }, 4000)
       // }, data.time - new Date().getTime())
     });
@@ -44,62 +47,23 @@ class Player extends Component {
     });
 
     socket.on('pause-vid', () => {
-      this.state.player.pauseVideo();
+      this.setState({ paused: true })
+      // this.state.player.pauseVideo();
     });
 
     socket.on('play-vid', (data) => {
-      this.setState({ seekTo: true });
-      this.state.player.seekTo(data.vidTime);
-      this.state.player.playVideo();
+      this.setState({ currentat: data.vidTime, paused: false });
+      // this.setState({ seekTo: true });
+      // this.state.player.seekTo(data.vidTime);
+      // this.state.player.playVideo();
     });
 
     socket.on('updateStatus', (data) => {
-      this.setState({currentRoom: data})
+      this.setState({ currentRoom: data })
     });
   }
 
-  componentDidMount() {
-    this.state.player = YouTubePlayer('player', {
-      playerVars: {
-        // controls: 0,
-        rel: 0,
-        showinfo: 0
-      }
-    });
 
-    this.state.player.on('stateChange', e => this.stateChange(e));
-  }
-
-  stateChange(event) {
-    let { wait, seekTo } = this.state;
-    let { socket } = this.props;
-    if (event.data === 0) {
-      // ended
-      socket.emit('next-song');
-    } else if (event.data === 1) {
-      if (seekTo) {
-        this.setState({ seekTo: false })
-        return;
-      }
-
-      if (wait) {
-        this.state.player.pauseVideo();
-        return;
-      }
-
-      this.state.player.getCurrentTime().then(time => {
-        socket.emit('play', time);
-      })
-    } else if (event.data === 2) {
-      // paused
-      if (wait) {
-        return;
-      }
-      socket.emit('pause');
-    } else if (event.data === 3) {
-      // buffering
-    }
-  }
 
   search(e) {
     e.preventDefault();
@@ -107,6 +71,13 @@ class Player extends Component {
       if (err) { console.log(err); return }
       this.setState({ searchResult: result.items })
     });
+  }
+
+  addByUrl(form) {
+    form.preventDefault();
+    let url = form.target.url.value;
+      this.setState({ alert: { message: 'De video is toegevoegd!', color: 'green' } });
+      this.props.socket.emit('add-to-queue', { video_id: url, name: url, type: 'directUrl' });
   }
 
   addSong(video, type) {
@@ -137,6 +108,9 @@ class Player extends Component {
             <div onClick={() => this.setState({ activeMenu: 'search' })}>
               <i className="fas fa-search"></i> Zoek
             </div>
+            <div onClick={() => this.setState({ activeMenu: 'directUrl' })}>
+              <i className="fas fa-link"></i> Url
+            </div>
           </div>
 
           {this.renderMenu()}
@@ -145,7 +119,26 @@ class Player extends Component {
             <button className="nextSong rainbow" onClick={this.nextSong.bind(this)}><span>Volgende </span></button>
           </div>
         </div>
-        <div id="player"></div>
+
+        {!!this.state.vidInfo.type === 'youtube' &&
+          <div style={{overflow: 'hidden'}}>
+            <Ytplayer
+              socket={this.state.socket}
+              vidinfo={this.state.vidInfo}
+              currentat={this.state.currentat}
+              paused={this.state.paused}
+            /></div>}
+
+        {!!this.state.vidInfo.type === 'directUrl' &&
+          <div style={{overflow: 'hidden'}}>
+            <DirectUrl
+              socket={this.state.socket}
+              vidinfo={this.state.vidInfo}
+              currentat={this.state.currentat}
+              paused={this.state.paused}
+            />
+          </div>
+        }
 
         {/* Loadscreen */}
         {this.state.wait ? <div className="wait"><div className="waitSpinner"></div></div> : null}
@@ -185,6 +178,15 @@ class Player extends Component {
               )
             })}
           </div>
+        </div>
+      )
+    } else if (activeMenu === 'directUrl') {
+      return (
+        <div>
+          <form onSubmit={this.addByUrl.bind(this)}>
+            <input id="url" className="vidInput" placeholder="Plaats hier de url" type="text" />
+            <button className="addVideoButton" type="submit">Voeg toe!</button>
+          </form>
         </div>
       )
     }
