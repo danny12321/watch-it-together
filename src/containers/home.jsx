@@ -4,7 +4,10 @@ class Home extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      rooms: []
+      rooms: [],
+      wait: true,
+      alert: null,
+      search: null
     }
 
     let { socket } = this.props;
@@ -12,20 +15,32 @@ class Home extends Component {
     socket.emit('getRooms');
 
     socket.on('sendRooms', rooms => {
-      this.setState({ rooms })
+      this.setState({ rooms, wait: false });
+      this.setState({});
     });
 
     socket.on('room-joined', room => {
       this.props.setRoom(room)
+      this.setState({ wait: false });
+      this.props.updateRoute('/');
+    });
+
+    socket.on('room-exist', room => {
+      this.setState({ wait: false, alert: { message: 'Deze room bestaat al..', color: 'orange' } });
     });
   }
 
-  joinRoom(e, r) {
+  joinRoom(room) {
     // e is from form
     // r is from button
-    if (e) e.preventDefault();
-    let room = e ? e.target.room.value : r;
-    this.props.socket.emit('join-room', room)
+    this.setState({ wait: true });
+    this.props.socket.emit('join-room', { room })
+  }
+
+  makeRoom(e) {
+    this.setState({ wait: true });
+    e.preventDefault();
+    this.props.socket.emit('make-room', { room: e.target.room.value, private: e.target.private.checked })
   }
 
   render() {
@@ -33,26 +48,50 @@ class Home extends Component {
 
     return (
       <div id="roomMenu" className="container rainbow">
-        <h2>Join een room</h2>
-        Room:
-        <form onSubmit={e => this.joinRoom(e)}>
-          <input id="room" type="text" />
-          <button>Join</button>
+        <h2>Maak een room</h2>
+        <form onSubmit={e => this.makeRoom(e)}>
+          <input name="room" type="text" />
+          <input type="checkbox" name="private" />
+          <button type="submit">Maak</button>
         </form>
+
+        <hr />
+        Zoek: <input onChange={e => {
+          this.setState({ search: e.target.value, alert: null });
+        }} type="text" />
 
         <table>
           <tbody>
             {rooms.map(room => {
+              if (this.state.search) {
+                try {
+                  if (room.name.search(this.state.search) < 0) return
+                } catch (error) {
+                  console.log('error!!')
+                  if (!this.state.alert) this.setState({ alert: { message: 'Er zit een fout in je zoek opdracht.', color: 'red' } })
+                  return;
+                }
+              }
               return (
                 <tr key={room.name}>
                   <td>{room.name}</td>
                   <td>{room.listeners}</td>
-                  <td><button onClick={() => this.joinRoom(null, room.name)}>Join</button></td>
+                  <td>
+                    {room.private ?
+                      <i className="fas fa-lock"></i> :
+                      <button onClick={() => this.joinRoom(room.name)}>Join</button>}
+                  </td>
                 </tr>
               )
             })}
           </tbody>
         </table>
+
+        {/* Loadscreen */}
+        {this.state.wait ? <div className="wait"><div className="waitSpinner"></div></div> : null}
+
+        {/* Alert message */}
+        {this.state.alert ? <div className="alert" onClick={() => this.setState({ alert: null })} style={{ background: this.state.alert.color }}>{this.state.alert.message}</div> : null}
 
       </div>
     );

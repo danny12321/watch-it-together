@@ -1,52 +1,23 @@
 import React, { Component } from 'react';
-import { BrowserRouter as Router, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 import './styles/index.css';
 
-import Home from './containers/home';
-import Player from './containers/player';
-
-const io = require('socket.io-client');
-
-// for localtesting
-// const socket = io.connect(`http://localhost:5500`);
-
-// for build
-const socket = io();
+import HomeIndex from './containers/index';
+import NotFound from './containers/NotFound';
 
 class App extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      room: null
-    }
-
-    socket.on('room-doesnt-exist', () => {
-      alert('Deze room bestaat niet meer. Dit komt waarschijnlijk door dat de server is herstart.')      
-      this.setState({room: null});
-    })
-  }
-
-  renderHome() {
-    return (
-      <Home
-        socket={socket}
-        setRoom={room => { this.setState({ room }) }}
-      />
-    )
-  }
-
-  renderRoom() {
-    return (
-      <Player
-        socket={socket}
-        room={this.state.room}
-      />
-    )
-  }
 
   render() {
-    if (this.state.room) return this.renderRoom()
-    else return this.renderHome()
+    return (
+      <Router>
+        <Switch>
+          <Route exact path="/" component={HomeIndex} />
+          <Route exact path="/join/:room" component={HomeIndex} />          
+          <Route exact path="/join/:room/:token" component={HomeIndex} />
+          <Route component={NotFound} />
+        </Switch>
+      </Router>
+    )
   }
 }
 

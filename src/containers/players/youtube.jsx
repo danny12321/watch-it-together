@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-
 import YouTubePlayer from 'youtube-player';
 
 class youtube extends Component {

@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import Ytplayer from './players/youtube';
 import DirectUrl from './players/directUrl';
+import { CopyToClipboard } from 'react-copy-to-clipboard';
 
 var YouTube = require('youtube-node');
 var youTube = new YouTube();
@@ -76,8 +77,8 @@ class Player extends Component {
   addByUrl(form) {
     form.preventDefault();
     let url = form.target.url.value;
-      this.setState({ alert: { message: 'De video is toegevoegd!', color: 'green' } });
-      this.props.socket.emit('add-to-queue', { video_id: url, name: url, type: 'directUrl' });
+    this.setState({ alert: { message: 'De video is toegevoegd!', color: 'green' } });
+    this.props.socket.emit('add-to-queue', { video_id: url, name: url, type: 'directUrl' });
   }
 
   addSong(video, type) {
@@ -99,7 +100,15 @@ class Player extends Component {
         <div className="sidbar">
           <div id="vidTitle">
             <h2>{this.state.vidInfo.name || 'Selecteer een video!'}</h2>
-            <span className="userCount"><i className="fas fa-users"></i> {this.state.currentRoom ? this.state.currentRoom.listeners : '...'}</span>
+            {this.state.currentRoom &&
+              <span className="joinUrl">
+                {/* <input type="text" value={`http://${window.location.hostname}:3000/join/${this.state.currentRoom.name}/${this.state.currentRoom.private}`} disabled /> */}
+                <CopyToClipboard text={`http://${window.location.hostname}:3000/join/${this.state.currentRoom.name}${this.state.currentRoom.private ? '/' + this.state.currentRoom.private : ''}`}
+                  onCopy={() => alert('coppied')}>
+                  <span style={{cursor: 'pointer'}}><i className="fas fa-paste"></i> Kopieer naar klembord</span>
+                </CopyToClipboard>
+              </span>}
+            <span className="userCount"><i className="fas fa-users"></i> {this.state.currentRoom ? this.state.currentRoom.listeners : '1'}</span>
           </div>
           <div className="sidebar-menu">
             <div onClick={() => this.setState({ activeMenu: 'queue' })}>
@@ -120,8 +129,9 @@ class Player extends Component {
           </div>
         </div>
 
-        {!!this.state.vidInfo.type === 'youtube' &&
-          <div style={{overflow: 'hidden'}}>
+
+        {this.state.vidInfo.type === 'youtube' &&
+          <div style={{ overflow: 'hidden' }}>
             <Ytplayer
               socket={this.state.socket}
               vidinfo={this.state.vidInfo}
@@ -129,8 +139,8 @@ class Player extends Component {
               paused={this.state.paused}
             /></div>}
 
-        {!!this.state.vidInfo.type === 'directUrl' &&
-          <div style={{overflow: 'hidden'}}>
+        {this.state.vidInfo.type === 'directUrl' &&
+          <div style={{ overflow: 'hidden' }}>
             <DirectUrl
               socket={this.state.socket}
               vidinfo={this.state.vidInfo}
