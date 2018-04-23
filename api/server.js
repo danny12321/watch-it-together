@@ -3,7 +3,6 @@ const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const port = 5500;
-const mysql = require('mysql');
 const fs = require('fs');
 
 let queue = {};

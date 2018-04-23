@@ -6,7 +6,7 @@ import Player from './player';
 const io = require('socket.io-client');
 
 // for localtesting
-const socket = io.connect(`http://localhost:5500`);
+const socket = io.connect(`http://${window.location.hostname}:5500`);
 
 // for build
 // const socket = io();
